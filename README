@@ -1,0 +1,21 @@
+Sonification of Chess games in SuperCollider.
+
+Requirements:
+SuperCollider 3.3 or later
+
+Installation:
+Move the chessMusicClasses folder to your class extensions.
+Move the chessMusicSounds folder to your Sounds folder.
+
+Running:
+Open the gameParsing.rtf, double click inside the round brackets and press enter.
+
+Notes;
+Further game examples are provided in the exampleGames.rtf, these can be copy/pasted into the gameParsing.rtf.
+
+Audio files can be replaced/customised.
+
+To do:
+
+Control over tempo.
+Possibly update all sounds to use synthesis rather than samples.

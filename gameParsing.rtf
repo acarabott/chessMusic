@@ -1,0 +1,198 @@
+{\rtf1\ansi\ansicpg1252\cocoartf949\cocoasubrtf350
+{\fonttbl\f0\fnil\fcharset0 Monaco;\f1\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red0\green0\blue191;\red191\green0\blue0;
+\red96\green96\blue96;\red0\green115\blue0;}
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\ql\qnatural\pardirnatural
+
+\f0\fs28 \cf2 (\
+\cf3 var\cf2  board, whiteMoves, blackMoves, gameOver, text, numbers, wTime, parseFunc, playRoutFunc, endFunc;\
+\
+\cf4 //Time between moves in seconds, feel free to change.\cf2 \
+wTime = 2; \
+\
+\cf4 //Game text, feel free to enter algebraic chess games\cf2 \
+\
+text =\cf5 "
+\f1\fs24  1. d4 Nf6 2. Nf3 g6 3. Nc3 d5 4. Bf4 Bg7 5. e3 O-O 6. Be2 Nh5 7. Bg5 h6 8. Bh4 g5 9. Bg3 Nxg3 10. hxg3 c5 11. Qd3 e6 12. Ne5 f5 13. g4 f4 14. O-O-O Nc6 15. Rxh6 Bxh6 16. Qg6+ Bg7 17. Bd3 Nxe5 18. dxe5 Rf7 19. Nb5 Kf8 20. Nd6 Rd7 21. Bb5 Rxd6 22. exd6 Bd7 23. Bxd7 Qxd7 24. Qxg5 fxe3 25. Qf4+ Kg8 26. fxe3 Rf8 27. Qg5 Qxd6 28. Rh1 Qe5 29. Qh4 Qxb2+ 30. Kd1 Qb1+ 31. Kd2 Qb4+ 32. Kd1 Qe4 33. Qh5 Rf2 0-1  
+\f0\fs28 "\cf2 ;\
+\
+\cf4 //Board\cf2 \
+board = \cf3 ChessBoard\cf2 .new();\
+\
+\cf4 //Arrays of moves\cf2 \
+whiteMoves = \cf3 List\cf2 .new();\
+blackMoves = \cf3 List\cf2 .new();\
+\
+\cf4 //Move Numbers\cf2 \
+numbers = (0..270);\
+\cf4 //Convert numbers array into symbols\cf2 \
+numbers.do(\{\cf3 |item, i|\cf2  numbers[i] = item.asSymbol\});\
+\
+\cf4 /////////////////////////////////////////////////// Functions /////////////////////////////////////////////////////////\cf2 \
+\
+\cf4 //Function to parse the game text;\cf2 \
+parseFunc = \{\
+	\cf4 //Loop through entire text body\cf2 \
+	block\{ \cf3 |break|\cf2 \
+	for(0, text.size-1,\
+		\{\cf3 arg\cf2  i;\
+			\cf3 var\cf2  j, begin, end, ret, temp, temp2, temp3, temp4;\
+			\
+			end=\cf3 nil\cf2 ; \cf4 //Endpoint within a pair of moves\cf2 \
+			j=0; \cf4 //Iterator within a pair of moves.\cf2 \
+			\
+			\cf4 //If a number followed by a full stop (e.g. 3.) is found\cf2 \
+			if( (numbers.includes(text[i].asSymbol)) && (text[i+1].asSymbol==\cf6 '.'\cf2 ),\
+				\{\
+				\
+				\cf4 //Set the first char of the pair of moves as i+2 (usually the space)\cf2 \
+				begin = i+2; \
+				\
+				\cf4 //Until an endpoint within the movepair is found\cf2 \
+				while(\{end==\cf3 nil\cf2 \},\
+					\{	if(j==10000, \{end=\cf5 "whoops"\cf2 \});\
+						\cf4 //If a space followed by a number is found\cf2 \
+						if( (text[i+j].asSymbol==\cf6 ' '\cf2 ) && (numbers.includes(text[i+j+1].asSymbol)),\
+							\{		\
+								\cf4 //Set the endpoint\cf2 \
+								end=i+j;\
+							\}\
+						);\
+					\cf4 //Increase the j iterator	\cf2 \
+					j=j+1;\
+					\
+					\}\
+				);\
+				\
+				\cf4 //Store the move pair (without move number) in a temporary variable\cf2 \
+				for(begin, end,\
+					\{\cf3 arg\cf2  k;\
+						ret = ret++text[k].asSymbol;\
+					\}\
+				);\
+				\
+				\cf4 //Index of the first non space character\cf2 \
+				temp = ret.indexOf($ )+1;\
+				\cf4 //Index of the second space character\cf2 \
+				temp2 = ret.copyRange(temp, ret.size-1).indexOf($ )+1;\
+				\cf4 //Set white's move as that from the first non-space to -1 of the second space\cf2 \
+				whiteMoves.add(ret.copyRange(temp,temp2-1));\
+				\cf4 //Set black's move as that from the char after the second space until 2 from the end\cf2 \
+				blackMoves.add(ret.copyRange(temp2+1, ret.size-2));\
+				\},\
+				\
+				\{ \
+					\cf4 //If the game is ended (If a number followed by a dash, or a "/" is found e.g. 1-0 for a win, 1/2 for a draw)\cf2 \
+					if( (numbers.includes(text[i].asSymbol) ) && ((text[i+1].asSymbol==\cf6 '-'\cf2 ) || (text[i+1].asSymbol==\cf6 '/'\cf2 ) ),\
+						\{\
+							for(i, text.size-1,\
+								\{\cf3 arg\cf2  k;\
+									ret = ret++text[k].asSymbol;\
+								\}\
+							);\
+							gameOver =ret;\
+							break.value;\
+							\
+						\}\
+					)\
+				\}\
+				\
+			);\
+		\
+		\}	\
+	);\
+	\};\
+\};\
+\
+\
+\cf4 //Stored Routine to play through a game\cf2 \
+playRoutFunc = \{\
+	\cf3 Routine\cf2 .new(\{\
+		s.sync;\
+		block\{\cf3 |break|\cf2 \
+		for(0, whiteMoves.size,\
+			\{\cf3 |i|\cf2 \
+				\cf5 "Move no."\cf2 .post; (i+1).postln;\
+				if(whiteMoves[i]==\cf3 nil\cf2 ,\
+					\{\
+						gameOver.postln; \
+						board.printBoard; \
+						endFunc.(gameOver);\
+						break.()\
+					\
+					\},\
+					\{\
+						board.move(whiteMoves[i]);\
+						board.printBoard;\
+						wTime.wait\
+					\}\
+				);\
+				if(blackMoves[i]==\cf3 nil\cf2 ,\
+					\{\
+						gameOver.postln; \
+						board.printBoard; \
+						endFunc.(gameOver);\
+						break.()\
+					\},\
+					\{\
+						board.move(blackMoves[i]);\
+						board.printBoard;\
+						wTime.wait\
+					\}\
+				);\
+			\}\
+		)\
+		\}\
+	\})\
+\};\
+\
+\cf4 //Function to play gameover sounds\cf2 \
+endFunc = \{\cf3 |result|\cf2 \
+	\
+	\
+	\cf4 //Kill any remaining synths and routines\cf2 \
+	board.whitePieces.do(\{\cf3 |item|\cf2  if(item!=\cf3 nil\cf2 ,\{item.pieceSynth.free; item.stopRouts\})\});\
+	board.blackPieces.do(\{\cf3 |item|\cf2  if(item!=\cf3 nil\cf2 ,\{item.pieceSynth.free; item.stopRouts\})\});\
+\
+	\cf4 //If white lost / black won\cf2 \
+	if(result[0].asSymbol==\\0,\
+		\{ \
+			\{\
+				\cf3 Synth\cf2 (\cf6 \\eventSynth\cf2 , [\cf6 \\pan\cf2 , -1, \cf6 \\bufnum\cf2 , board.loserB.bufnum]);\
+				4.wait;\
+				\cf3 Synth\cf2 (\cf6 \\eventSynth\cf2 , [\cf6 \\pan\cf2 , 1, \cf6 \\bufnum\cf2 , board.winnerB.bufnum]);\
+			\}.fork\
+		\},\
+		\{	\
+			\cf4 //If it was a draw\cf2 \
+			if(result[1]==\cf5 "/"\cf2 ,\
+				\{\
+					\{\
+						\cf3 Synth\cf2 (\cf6 \\eventSynth\cf2 , [\cf6 \\pan\cf2 , -1, \cf6 \\bufnum\cf2 , board.loserB.bufnum]);\
+						0.125.wait;\
+						\cf3 Synth\cf2 (\cf6 \\eventSynth\cf2 , [\cf6 \\pan\cf2 , 1, \cf6 \\bufnum\cf2 , board.loserB.bufnum]);\
+\
+					\}.fork\
+				\},\
+				\cf4 //If white won / black lost\cf2 \
+				\{\
+					\{\
+						\cf3 Synth\cf2 (\cf6 \\eventSynth\cf2 , [\cf6 \\pan\cf2 , 1, \cf6 \\bufnum\cf2 , board.loserB.bufnum]);\
+						4.wait;\
+						\cf3 Synth\cf2 (\cf6 \\eventSynth\cf2 , [\cf6 \\pan\cf2 , -1, \cf6 \\bufnum\cf2 , board.winnerB.bufnum]);\
+					\}.fork\
+				\}\
+			)	\
+		\}\
+	)	\
+\};\
+\
+\cf4 ///////////////////////////////////////////////////// Action /////////////////////////////////////////////////////////\cf2 \
+\cf4 //Parse the game text\cf2 \
+parseFunc.();\
+\
+\cf4 //Play the Game\cf2 \
+playRoutFunc.().play;\
+\
+\
+)}
